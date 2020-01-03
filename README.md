@@ -1,2 +1,1 @@
-# manga-web
-cartoon manga
+# Prometheus Webhook
