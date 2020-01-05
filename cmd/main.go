@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/joecomscience/prom-webhook/pkg/channels"
 	"log"
 	"net/http"
 	"os"
@@ -29,11 +30,11 @@ func main() {
 	}
 }
 
-func readiness(w http.ResponseWriter, r *http.Request)  {
+func readiness(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func liveness(w http.ResponseWriter, r *http.Request)  {
+func liveness(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -41,6 +42,7 @@ func startServer(port string) *http.Server {
 	r := mux.NewRouter()
 	r.HandleFunc("/readiness", readiness).Methods("GET")
 	r.HandleFunc("/liveness", liveness).Methods("GET")
+	r.HandleFunc("/line", channels.LineHandler).Methods("POST")
 
 	return &http.Server{
 		Handler: r,
