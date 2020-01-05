@@ -1,0 +1,12 @@
+groups:
+  - name: infra_service
+    rules:
+      - alert: monitor_service_down
+        expr: up{instance="node-exporter:9100",job="node-exporter"} == 1
+        for: 5s
+        labels:
+          app: app_server
+          severity: critical
+        annotations:
+          summary: "Monitor service non-operational"
+          description: "Service {{ $labels.instance }} is down."
