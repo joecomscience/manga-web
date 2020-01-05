@@ -19,7 +19,5 @@ services:
     image: prom/alertmanager
     volumes:
       - $PWD/alertmanager.yaml:/etc/alertmanager/alertmanager.yml
-#    command:
-#      - '--config.file=/etc/alertmanager/config.yaml'
     ports:
       - 9093:9093
