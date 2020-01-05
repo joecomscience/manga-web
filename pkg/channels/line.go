@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	url = "https://notify-api.line.me/api/notify"
+	url   = "https://notify-api.line.me/api/notify"
 	token = "Bearer " + "20zl2k8gtimiX1js3vWxxm0XPDAjRPLDUKQQA87y4Kz"
 )
 
-func sendLineNotify(msg []byte) error {
+func sendLineNotify(msg []byte, s chan string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(msg))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -23,16 +23,17 @@ func sendLineNotify(msg []byte) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		s <- err.Error()
+		return
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Printf("line notify response: %v\n", string(body))
-	return nil
+	s <- ""
 }
 
-func LineHandler(w http.ResponseWriter, r *http.Request)  {
+func LineHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	alertInfo := template.Data{}
@@ -42,16 +43,17 @@ func LineHandler(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	var messages []string
+	msgStatus := make(chan string)
 
 	for _, alert := range alertInfo.Alerts {
 		description := alert.Annotations["description"]
 		summary := alert.Annotations["summary"]
-		message := "Description: " + description + "; Summary: " + summary
-		messages = append(messages, message)
+		message := "message=Description: " + description + "; Summary: " + summary
+		go sendLineNotify([]byte(message), msgStatus)
 	}
+	result := <-msgStatus
+	fmt.Printf("time_stamp: %v, data: %v\n", time.Now(), result)
 
-	fmt.Printf("time_stamp: %v, data: %v\n", time.Now(), messages)
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("ok"))
 }
