@@ -25,16 +25,19 @@ func main() {
 	server := startServer(port)
 	go gracefulShutdown(server, gracefulStop)
 
+	fmt.Printf("server start on port : %s\n", port)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Could not listen on %s: %v\n", port, err)
 	}
 }
 
 func readiness(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("readiness status ok")
 	w.WriteHeader(http.StatusOK)
 }
 
 func liveness(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("liveness status ok")
 	w.WriteHeader(http.StatusOK)
 }
 
