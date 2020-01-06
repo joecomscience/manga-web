@@ -38,7 +38,7 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 
 	alertInfo := template.Data{}
 	if err := json.NewDecoder(r.Body).Decode(&alertInfo); err != nil {
-		fmt.Errorf("Decode info to struct error: %v\n", err.Error())
+		fmt.Printf("Decode info to struct error: %v\n", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
