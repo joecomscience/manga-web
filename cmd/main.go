@@ -43,6 +43,7 @@ func startServer(port string) *http.Server {
 	r.HandleFunc("/readiness", readiness).Methods("GET")
 	r.HandleFunc("/liveness", liveness).Methods("GET")
 	r.HandleFunc("/line", channels.LineHandler).Methods("POST")
+	r.HandleFunc("/sms", channels.SmsHandler).Methods("POST")
 
 	return &http.Server{
 		Handler: r,
