@@ -2,7 +2,7 @@ groups:
   - name: infra_service
     rules:
       - alert: monitor_service_down
-        expr: up{instance="node-exporter:9100",job="node-exporter"} == 1
+        expr: go_goroutines{instance="host.docker.internal:3000",job="application_collector"} > 1
         for: 5s
         labels:
           app: app_server
