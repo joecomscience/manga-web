@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/joecomscience/prom-webhook/pkg/channels"
 	"github.com/joecomscience/prom-webhook/pkg/channels/sms"
 	"github.com/joecomscience/prom-webhook/pkg/server"
 	"log"
@@ -36,7 +35,6 @@ func startServer(port string) *http.Server {
 
 	r.HandleFunc("/readiness", server.Readiness).Methods("GET")
 	r.HandleFunc("/liveness", server.Liveness).Methods("GET")
-	r.HandleFunc("/line", channels.LineHandler).Methods("POST")
 	r.HandleFunc("/sms", sms.Handler).Methods("POST")
 
 	return &http.Server{
