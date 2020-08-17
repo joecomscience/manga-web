@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . .
 
 RUN go mod download && \
-    go build cmd/main.go
+    go build main.go
 
 FROM alpine:3.11 as release
 
