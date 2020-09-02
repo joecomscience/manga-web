@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/joecomscience/prom-webhook/pkg/channels/sms"
-	"github.com/joecomscience/prom-webhook/pkg/server"
+	"github.com/joecomscience/prom-webhook/channels/grafana"
+	"github.com/joecomscience/prom-webhook/channels/sms"
+	"github.com/joecomscience/prom-webhook/server"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 
 func main() {
 	const (
-		port = ":3000"
+		port = ":4000"
 	)
 
 	gracefulStop := make(chan os.Signal, 1)
@@ -36,6 +37,7 @@ func startServer(port string) *http.Server {
 	r.HandleFunc("/readiness", server.Readiness).Methods("GET")
 	r.HandleFunc("/liveness", server.Liveness).Methods("GET")
 	r.HandleFunc("/sms", sms.Handler).Methods("POST")
+	r.HandleFunc("/grafana", grafana.Handler).Methods("POST")
 
 	return &http.Server{
 		Handler: r,

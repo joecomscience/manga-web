@@ -1,42 +1,31 @@
-package sms
+package notify_channel
 
 import (
 	"bytes"
-	"fmt"
-	prom "github.com/prometheus/alertmanager/template"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"text/template"
 )
 
 type SMS struct {
-	Phones  []string
-	Message []string
+	PhoneNumbers []string
+	Message      []string
 }
 
-func (s *SMS) AddMsg(alerts prom.Alerts) {
-	s.Phones = strings.Split(os.Getenv("PHONES"), ",")
-	for _, a := range alerts {
-		msg := fmt.Sprintf("Description: %s\n", a.Annotations["description"])
-		s.Message = append(s.Message, msg)
-	}
-}
-
-func (s *SMS) Send() {
+func (sms SMS) Send() {
 	var wg sync.WaitGroup
-	for _, p := range s.Phones {
-		for _, m := range s.Message {
+	for _, phoneNumber := range sms.PhoneNumbers {
+		for _, message := range sms.Message {
 			wg.Add(1)
-			go sendMessageToSMSGateway(m, p, &wg)
+			go sendMessageToSMSGateway(message, phoneNumber, &wg)
 		}
 	}
 }
 
 func getPayload(msg string, to string) ([]byte, error) {
-	p := &bytes.Buffer{}
+	bufferPayload := &bytes.Buffer{}
 	tmpl, err := template.New("sms_payload").Parse(`
 		<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.ge.com" xmlns:bean="http://bean.ge.com">
 			<soapenv:Header/>
@@ -49,12 +38,12 @@ func getPayload(msg string, to string) ([]byte, error) {
 					<bean:cardNo></bean:cardNo>
 					<bean:channel>INFO</bean:channel>
 					<bean:lang>THA</bean:lang>
-					<bean:msg>{{.Msg}}</bean:msg>
+					<bean:msg>{{.Message}}</bean:msg>
 					<bean:profile>KRUNGSRIGRP_EN</bean:profile>
 					<bean:refMsgCode></bean:refMsgCode>
 					<bean:scheduling></bean:scheduling>
 					<bean:subApp>OPENSHIFT</bean:subApp>
-					<bean:telNo>{{.To}}</bean:telNo>
+					<bean:telNo>{{.SendTo}}</bean:telNo>
 				</ser:bean>
 			</ser:saveSMS>
 			</soapenv:Body>
@@ -63,38 +52,38 @@ func getPayload(msg string, to string) ([]byte, error) {
 		return nil, err
 	}
 
-	i := struct {
-		Msg string
-		To      string
+	templateData := struct {
+		Message string
+		SendTo  string
 	}{msg, to}
 
-	if err = tmpl.Execute(p, i); err != nil {
+	if err = tmpl.Execute(bufferPayload, templateData); err != nil {
 		return nil, err
 	}
 
-	return p.Bytes(), nil
+	return bufferPayload.Bytes(), nil
 }
 
-func sendMessageToSMSGateway(msg string, to string, wg *sync.WaitGroup) {
+func sendMessageToSMSGateway(message string, sendTo string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	url := os.Getenv("SMS_URL")
-	payload, err := getPayload(msg, to)
+	payload, err := getPayload(message, sendTo)
 	if err != nil {
 		logrus.Errorf("Get data payload error: %s\n", err.Error())
 		return
 	}
 
 	c := &http.Client{}
-	r, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-	r.Header.Set("Content-type", "text/xml")
-	r.Header.Set("SOAPAction", "saveSMS")
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
 	if err != nil {
 		logrus.Errorf("Error on creating request object: %s\n", err.Error())
 		return
 	}
+	req.Header.Set("Content-type", "text/xml")
+	req.Header.Set("SOAPAction", "saveSMS")
 
 	logrus.Info("done!")
-	_, err = c.Do(r)
+	_, err = c.Do(req)
 	if err != nil {
 		logrus.Errorf("Error on dispatching request: %s\n ", err.Error())
 		return
